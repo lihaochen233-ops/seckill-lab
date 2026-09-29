@@ -110,8 +110,7 @@ function fill(admin = false) {
         <small>仅演示环境提供，完整部署请创建自己的账号。</small>
       </div>
       <p class="secure-note">
-        <Icon name="shield" :size="15" />密码经加盐派生存储，登录凭证使用
-        HttpOnly Cookie。
+        <Icon name="shield" :size="15" />请妥善保管账户信息，勿向他人透露密码。
       </p>
     </section>
   </div>

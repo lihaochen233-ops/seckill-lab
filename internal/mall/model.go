@@ -1,4 +1,4 @@
-// Package mall 是完整商城版本。原 internal/store 等包保留用于基础课程对照。
+// Package mall 实现商城交易、异步秒杀、库存管理和运营 API。
 package mall
 
 import (

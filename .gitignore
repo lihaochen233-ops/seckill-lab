@@ -1,4 +1,6 @@
 .env
+.env.*
+!.env.example
 bin/
 *.exe
 *.log
@@ -6,4 +8,3 @@ coverage.out
 .local/
 frontend/node_modules/
 *.tsbuildinfo
-.env.mall

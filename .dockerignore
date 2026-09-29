@@ -1,9 +1,10 @@
 .git
 .local
 .env
+.env.*
+!.env.example
 bin
 *.log
 coverage.out
 frontend/node_modules
 **/*.tsbuildinfo
-.env.mall

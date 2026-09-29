@@ -645,8 +645,7 @@ async function retryDead() {
             ><span>订单 / 返库</span>
           </div>
           <p v-if="state.demo" class="form-notice">
-            当前为演示模式：SQLite、miniredis
-            和进程内队列模拟业务流程；这里不代表真实 RabbitMQ 的运行验证。
+            当前为本地预览环境，商品与订单为示例数据。
           </p>
           <div class="subsection-heading">
             <h3>库存守恒检查</h3>

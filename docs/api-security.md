@@ -83,6 +83,6 @@ Idempotency-Key: checkout-example-001
 
 没有邮件验证、找回密码、MFA、验证码、设备风控、真实支付签名、第三方渗透测试和生产告警。限流无法阻止所有批量注册或分布式攻击。角色变化目前没有管理入口；如后续增加，必须撤销该用户旧会话，不能仅更新数据库角色后继续使用旧会话权限。
 
-仅有页面安全头并不等于无 XSS；后续引入富文本、用户上传或第三方脚本时要重新评估。当前应用不提供任意文件上传，减少了教学范围与攻击面。公开部署需 HTTPS、隔离网络、最小权限账号、补丁管理、备份恢复与真实安全测试。
+仅有页面安全头并不等于无 XSS；后续引入富文本、用户上传或第三方脚本时要重新评估。当前应用不提供任意文件上传。公开部署需 HTTPS、隔离网络、最小权限账号、补丁管理、备份恢复与真实安全测试。
 
 参考：[OWASP Session Management](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html) 与 [Password Storage](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html)。

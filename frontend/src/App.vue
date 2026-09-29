@@ -95,7 +95,7 @@ function submitSearch() {
       </div>
       <div>
         <Icon name="shield" /><span
-          ><b>安全交易</b><small>会话保护与订单权限校验</small></span
+          ><b>账户保护</b><small>安心管理你的订单</small></span
         >
       </div>
       <div>
@@ -125,12 +125,12 @@ function submitSearch() {
         </div>
       </div>
       <div class="footer-bottom">
-        <span>© 2026 PULSE 脉冲生活 · Go 全栈商城学习项目</span
+        <span>© 2026 PULSE 脉冲生活</span
         ><span
           >{{
             state.demo
-              ? "演示环境 · SQLite / 模拟中间件"
-              : "完整环境 · MySQL / Redis / RabbitMQ"
+              ? "本地预览 · 示例商品"
+              : "PULSE 在线商城"
           }}
           · 所有支付均为模拟</span
         >

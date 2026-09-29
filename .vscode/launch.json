@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "PULSE 商城：本地演示",
+      "name": "PULSE 商城：本地预览",
       "type": "go",
       "request": "launch",
       "mode": "auto",
@@ -11,13 +11,6 @@
       "args": ["-mode", "demo"],
       "env": { "MALL_ADDR": "127.0.0.1:8088" },
       "preLaunchTask": "mall: build frontend"
-    },
-    {
-      "name": "基础秒杀：对照学习",
-      "type": "go",
-      "request": "launch",
-      "program": "${workspaceFolder}/cmd/server",
-      "cwd": "${workspaceFolder}"
     }
   ]
 }

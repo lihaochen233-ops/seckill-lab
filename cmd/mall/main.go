@@ -33,11 +33,12 @@ func main() {
 		os.Exit(1)
 	}
 }
+
 // run 负责装配依赖：demo 使用本地 SQLite/模拟 Redis/内存队列；stack 连接完整中间件。
 func run() error {
-	mode := flag.String("mode", env("MALL_MODE", "demo"), "demo 或 stack")
+	mode := flag.String("mode", env("MALL_MODE", "stack"), "stack（中间件部署）或 demo（本地预览）")
 	role := flag.String("role", env("MALL_ROLE", "all"), "all、api 或 worker")
-	initOnly := flag.Bool("init", false, "初始化商城表和种子数据后退出")
+	initOnly := flag.Bool("init", false, "初始化商城表和管理员后退出；demo 模式包含示例数据")
 	flag.Parse()
 	if *mode != "demo" && *mode != "stack" {
 		return fmt.Errorf("mode 必须为 demo 或 stack")
@@ -115,7 +116,7 @@ func run() error {
 		return err
 	}
 	if *initOnly || demo {
-		// Compose 的 init 容器先迁移和造初始数据，再让 API 与 worker 启动。
+		// Compose 的 init 容器先迁移并初始化管理员，再启动 API 与 Worker。
 		if err = db.Migrate(boot); err != nil {
 			return err
 		}

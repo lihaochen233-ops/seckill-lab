@@ -1,6 +1,6 @@
 # 架构与故障恢复
 
-## 先区分三个数
+## 库存模型
 
 - 商品普通库存：`mall_products.stock`，普通结算使用。
 - 活动账本库存：`mall_activities.stock`，只有秒杀订单事务真正扣减它。
@@ -16,7 +16,7 @@
 
 有效订单是 pending / paid / shipped / completed，取消、超时、退款均不再占库存。监控差额应为 0，核对 SQL 使用单条查询的一致性快照。排队请求不属于有效订单，所以排队时 Redis 可抢名额通常小于数据库剩余配额。
 
-## 正常请求如何流动
+## 请求处理流程
 
 1. `api.go/join` 校验 Redis 会话、CSRF、来源与请求编号，执行用户和全局限流。
 2. `worker.go/Submit` 生成确定性 ticket ID。相同用户、活动和请求编号对应相同 ID。
@@ -79,7 +79,7 @@ ticket 状态仅 queued → ordered 或 queued → rejected。一人每场一次
 ## 高并发保护与实际边界
 
 - 单 API 实例最多同时处理 256 个 API 请求；超限直接 429，不堆积无限 goroutine。
-- Redis 全局秒杀固定窗口限制 2000 次/秒，每用户 5 次/秒。限流参数是教学配置，不是系统已达到的容量承诺。
+- Redis 全局秒杀固定窗口限制 2000 次/秒，每用户 5 次/秒。此为默认保护阈值，实际容量需通过目标环境压测确定。
 - Lua 让绝大多数售罄请求不触碰 MySQL；胜出者仍要持久化 ticket 与 Outbox，保证可靠受理。
 - 数据库连接池 32；用户/商品/活动按约定加锁；订单库存条件更新和事务是最后防线。
 - 每 Worker 进程 4 个 Relay、4 个消费者，消费预取 8；可多 Worker 共享 DB/MQ，Outbox 用 SKIP LOCKED 分配。
@@ -89,6 +89,6 @@ ticket 状态仅 queued → ordered 或 queued → rejected。一人每场一次
 
 后续优化必须先测出瓶颈，再考虑发布 channel 池、批量 claim、读缓存、按活动拆分、真实 Prometheus/告警、数据库备份、Redis 高可用和 RabbitMQ 三节点。当前没有 Outbox/历史活动自动清理任务，长期运行需要归档策略；演示数据库也不能替代 MySQL 并发验证。
 
-## 阅读依据
+## 参考资料
 
 发布确认只确认 broker 接收，消费 ACK 只确认消费者完成，两者职责不同，见 [RabbitMQ confirms](https://www.rabbitmq.com/docs/confirms)。至少一次投递需要业务幂等，见 [RabbitMQ reliability](https://www.rabbitmq.com/docs/reliability)。本实现使用 Reject 标识处理失败，避免新版 Nack 不增加投递失败计数的问题，见 [Quorum queues](https://www.rabbitmq.com/docs/quorum-queues)。
