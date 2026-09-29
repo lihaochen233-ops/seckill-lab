@@ -1,0 +1,48 @@
+name: seckill-lab
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: local-root-only
+      MYSQL_DATABASE: seckill_lab
+      MYSQL_USER: seckill
+      MYSQL_PASSWORD: local-seckill-only
+    ports:
+      - "127.0.0.1:13306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./migrations/001_init.sql:/docker-entrypoint-initdb.d/001_init.sql:ro
+      - ./migrations/002_seed.sql:/docker-entrypoint-initdb.d/002_seed.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "--silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+  redis:
+    image: redis:7.4-alpine
+    ports:
+      - "127.0.0.1:16379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+  app:
+    profiles: ["app"]
+    build: .
+    environment:
+      ADDR: 0.0.0.0:8080
+      STORE_MODE: mysql
+      MYSQL_DSN: seckill:local-seckill-only@tcp(mysql:3306)/seckill_lab
+      AUTH_SECRET: ${AUTH_SECRET:?请设置至少32字节的AUTH_SECRET}
+      REDIS_ADDR: redis:6379
+      RATE_LIMIT: ${RATE_LIMIT:-200}
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+volumes:
+  mysql_data:

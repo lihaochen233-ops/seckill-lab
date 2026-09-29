@@ -1,0 +1,9 @@
+.git
+.local
+.env
+bin
+*.log
+coverage.out
+frontend/node_modules
+**/*.tsbuildinfo
+.env.mall

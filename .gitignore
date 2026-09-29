@@ -1,0 +1,9 @@
+.env
+bin/
+*.exe
+*.log
+coverage.out
+.local/
+frontend/node_modules/
+*.tsbuildinfo
+.env.mall
