@@ -1,17 +1,16 @@
 # PULSE 脉冲生活 · Go 高并发秒杀商城
 
-适合学完 Go 基础后深入学习的完整单商家 Web 项目。Vue 3 + TypeScript 提供商城和运营后台，Go 实现普通交易与异步秒杀，完整环境使用 MySQL、Redis、RabbitMQ。
+基于 Go、Vue 3 和 TypeScript 的单商家商城系统，提供用户商城与运营后台，支持普通交易、异步秒杀、订单履约和库存管理。后端采用 MySQL、Redis 与 RabbitMQ，实现事务持久化、原子库存准入和异步订单处理。
 
-**最大特点：可解释、可恢复、可验证的防超卖链路。** Redis Lua 控制秒杀名额，MySQL 事务保存请求与 Outbox，RabbitMQ 异步处理，数据库再次检查库存并幂等创建订单。取消、超时、退款、消息重复和缓存重建都有明确处理。
+秒杀链路通过 Redis Lua 控制准入名额，MySQL 事务保存请求与 Outbox，RabbitMQ 驱动异步处理，数据库条件扣库并幂等创建订单。同时支持取消、超时、退款、重复消息处理与缓存重建，保障库存一致性和故障恢复。
 
-所有商品、支付和物流均为教学模拟，不产生真实资金交易。
+当前支付与物流采用模拟流程，未接入第三方支付或物流服务，不产生真实资金交易。
 
-## 先运行
+## 快速开始
 
-VS Code 打开 **seckill-lab 这个文件夹**。需要 Go **1.25+**、Node.js **22.12+（推荐 24）**。首次运行需要下载依赖。本机使用 Go 1.26.5 / Node 24.14.1 验证。
+环境要求：Go **1.25+**、Node.js **22.12+（推荐 24）**。在项目根目录执行以下命令，安装前端依赖并启动本地演示模式：
 
 ```powershell
-cd E:\STUDY\项目\seckill-lab
 cd frontend
 npm ci
 npm run build
@@ -28,11 +27,11 @@ go run ./cmd/mall -mode demo
 
 登录页可填充演示账号。固定账号只在 `demo` 模式生成。`.local/mall.db` 保存商品与订单，重启后会话失效，未完成的排队请求关闭。种子活动首次创建后持续 48 小时，到期后在后台新建活动。
 
-演示模式使用 SQLite、嵌入式 Redis 模拟器与进程内队列；**它不能证明真实中间件性能**。完整模式见下文。
+演示模式使用 SQLite、嵌入式 Redis 模拟器与进程内队列，无需单独部署中间件，适合本地预览和功能调试。使用 MySQL、Redis 与 RabbitMQ 的运行方式见下文。
 
-## 完整部署
+## Docker Compose 部署
 
-安装并启动 Docker Desktop（Linux containers），停止占用 8088 的演示服务。
+准备支持 Linux 容器的 Docker 与 Docker Compose 环境；Windows 可使用 Docker Desktop。确保端口 `8088` 可用，在项目根目录使用 PowerShell 执行：
 
 ```powershell
 ./scripts/setup-mall.ps1
@@ -42,9 +41,9 @@ docker compose --env-file .env.mall -f compose.mall.yaml ps -a
 
 脚本生成随机密码且不覆盖已有配置。管理员账号读取本地 `.env.mall` 的 `ADMIN_EMAIL / ADMIN_PASSWORD`。`init` 显示 `Exited (0)` 是初始化成功的正常状态。API 与 Worker 分离，中间件不开放宿主机端口，商城仅绑定本机。
 
-**本机没有 Docker，真实 Redis/RabbitMQ 和 Compose 集成尚未执行；已提供可选集成测试与 CI。** 详细步骤见 [运行与 VS Code 调试](docs/mall-running.md)。
+配置项、启动方式与调试步骤见 [运行与调试指南](docs/mall-running.md)。
 
-## 已实现功能
+## 核心功能
 
 | 区域 | 能力 |
 |---|---|
@@ -56,7 +55,9 @@ docker compose --env-file .env.mall -f compose.mall.yaml ps -a
 | 后台 | 商品上下架/补货、活动管理、订单履约、真实统计、Outbox 与库存守恒监控、审计 |
 | 安全 | HttpOnly/SameSite Cookie、生产 Secure Cookie、Origin/CSRF、服务端权限与归属、参数化 SQL、限流、并发上限、超时、CSP |
 
-范围：单规格商品、固定分类、包邮、每人每场一次参与资格。发货后售后、优惠券、多店铺、真实支付和物流回调未实现。
+当前业务范围为单规格商品、固定分类、包邮，以及每人每场一次秒杀参与资格。暂不支持发货后售后、优惠券、多店铺、第三方支付和物流回调。
+
+## 系统架构
 
 ```mermaid
 flowchart LR
@@ -71,17 +72,18 @@ flowchart LR
     C --> T
 ```
 
-HTTP `202` 表示请求已持久化，**不代表订单已生成或已付款**。MySQL 是库存账本；Redis 丢失时关闭准入，由管理员按数据库库存重建。架构采用模块化单体与独立 Worker，重点是高并发设计和正确性，不宣称“百万 QPS”或生产级高可用。
+系统采用模块化单体与独立 Worker 架构。HTTP `202` 表示秒杀请求已持久化，客户端需查询异步处理结果获取订单状态。MySQL 作为库存账本；Redis 活动缓存丢失时关闭准入，由管理员按数据库库存重建。
 
-## 按重要性学习
+## 项目文档
 
-从 [阶段规划与第一课](docs/mall-learning.md) 开始：普通下单事务 → Lua 防超卖 → Outbox 与幂等消费 → 异常恢复 → 安全与前端 → 部署与简历表达。提问时给出文件名、函数名和具体语句即可。
-
+- [运行与调试指南](docs/mall-running.md)
 - [架构、状态机与故障恢复](docs/mall-architecture.md)
 - [接口与安全边界](docs/mall-api-security.md)
-- [验证记录与实验方法](docs/mall-validation.md)
+- [测试记录与性能验证方法](docs/mall-validation.md)
 
-## 验证
+## 测试与检查
+
+在项目根目录执行单元测试、静态检查和秒杀并发一致性测试：
 
 ```powershell
 go test ./...
@@ -91,19 +93,25 @@ go test ./internal/mall -run TestFlashConcurrencyAndDuplicateDelivery -count=1 -
 Remove-Item Env:MALL_STRESS_USERS
 ```
 
-本机真实 MySQL 9.7：1000 用户、64 并发争抢 30 件库存，30 个请求受理、970 个售罄、30 个订单，重复投递与返库后库存守恒。Redis 使用 miniredis；这是正确性实验，**不是 HTTP/RabbitMQ 全链路容量报告**。
+默认测试使用 SQLite 与 miniredis，覆盖并发准入、幂等消费、事务回滚及库存恢复等路径。可通过 `TEST_MYSQL_DSN` 切换到 MySQL 测试环境，并通过 `TEST_REDIS_ADDR` 与 `TEST_AMQP_URL` 启用真实中间件集成测试。
+
+项目提供 CI 工作流和 `cmd/mallbench` HTTP 压测工具。环境配置、历史验证记录与压测方法见 [测试文档](docs/mall-validation.md)；全链路性能指标需在目标部署环境中实测。
+
+## 项目结构
 
 ```text
-cmd/mall/                 新版启动入口，demo/stack 与 api/worker
+cmd/mall/                 商城启动入口，demo/stack 与 api/worker
 cmd/mallbench/            完整环境 HTTP 并发测试与异步结果核对
 internal/mall/            商城、事务、Redis、RabbitMQ、安全 API 与测试
 frontend/src/             Vue 商城、后台、组件和类型定义
 web/mall/dist/            构建资源，Go embed 打包
-compose.mall.yaml         完整部署
+compose.mall.yaml         MySQL、Redis、RabbitMQ 与应用服务编排
 Dockerfile.mall           前端构建 → Go 构建 → 非 root 运行
 .vscode/                  调试配置
 scripts/                  启动与随机配置生成
-docs/mall-*.md            新版说明与课程
+docs/mall-*.md            商城架构、接口、运行与测试文档
 ```
 
-旧版 `cmd/server`、`internal/store` 等保留为基础课程对照，仍可 `go run ./cmd/server`。原说明见 [基础版归档](docs/basic-version.md)，`docs/00`～`07`、旧 `compose.yaml / Dockerfile / cmd/loadtest` 属于基础版，请勿与新版混用。
+## 历史版本
+
+仓库保留基础版实现，包括 `cmd/server`、`internal/store`、`cmd/loadtest` 及对应的 `compose.yaml`、`Dockerfile`，可通过 `go run ./cmd/server` 启动。相关说明见 [基础版归档](docs/basic-version.md) 和 `docs/00`～`07`。当前商城使用 `cmd/mall`、`compose.mall.yaml` 与 `Dockerfile.mall`。
